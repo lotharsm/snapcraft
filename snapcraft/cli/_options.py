@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import distutils.util
+import logging
 import os
 import sys
 from typing import Any, Dict, List, Optional
@@ -25,6 +26,8 @@ from snapcraft.cli.echo import confirm, prompt, warning
 from snapcraft.internal import common, errors
 from snapcraft.internal.meta.snap import Snap
 from snapcraft.project import Project, get_snapcraft_yaml
+
+logger = logging.getLogger(__name__)
 
 
 class PromptOption(click.Option):
@@ -356,6 +359,23 @@ def get_project(*, is_managed_host: bool = False, **kwargs):
     return project
 
 
+def apply_requests_environment() -> None:
+    # Special case to ensure that `requests` library uses the host CA certificates,
+    # otherwise it will use the ones provided by `certifi`, which may either be
+    # out of date or missing user-installed certificates.
+    system_ca_certificates = "/etc/ssl/certs/ca-certificates.crt"
+
+    if "REQUESTS_CA_BUNDLE" not in os.environ and os.path.exists(
+        system_ca_certificates
+    ):
+        os.environ["REQUESTS_CA_BUNDLE"] = system_ca_certificates
+
+    if "REQUESTS_CA_BUNDLE" in os.environ:
+        logger.debug(
+            f"apply_requests_environmnt: using {os.environ['REQUESTS_CA_BUNDLE']!r} for certificate verification"
+        )
+
+
 def apply_host_provider_flags(build_provider_flags: Dict[str, str]) -> None:
     """Set build environment flags in snapcraft process."""
 
@@ -387,3 +407,5 @@ def apply_host_provider_flags(build_provider_flags: Dict[str, str]) -> None:
 
     if build_provider_flags.get("SNAPCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS"):
         warning("*EXPERIMENTAL* extensions enabled.")
+
+    apply_requests_environment()
