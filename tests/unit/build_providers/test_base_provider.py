@@ -18,10 +18,12 @@ import contextlib
 import os
 import pathlib
 from textwrap import dedent
-from unittest.mock import call, patch, Mock
+from unittest.mock import Mock, call, patch
 
 import fixtures
-from testtools.matchers import Equals, EndsWith, DirExists, Not
+from testtools.matchers import DirExists, EndsWith, Equals, Not
+
+from snapcraft.internal.build_providers import errors
 
 from . import (
     BaseProviderBaseTest,
@@ -29,7 +31,6 @@ from . import (
     ProviderImpl,
     get_project,
 )
-from snapcraft.internal.build_providers import errors
 
 
 class BaseProviderTest(BaseProviderBaseTest):
@@ -230,7 +231,8 @@ class BaseProviderTest(BaseProviderBaseTest):
                     destination="/usr/local/share/ca-certificates/2.crt",
                     source=str(test_cert2),
                 ),
-            ]
+            ],
+            any_order=True,
         )
         provider.run_mock.assert_has_calls([call(["update-ca-certificates"])])
 

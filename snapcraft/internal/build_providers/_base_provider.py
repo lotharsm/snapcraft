@@ -19,24 +19,23 @@ import base64
 import logging
 import os
 import pathlib
-import pkg_resources
 import platform
 import shlex
 import shutil
 import sys
 import tempfile
 from textwrap import dedent
-from typing import Optional, Sequence
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Sequence
 
+import pkg_resources
 from xdg import BaseDirectory
 
 import snapcraft
+from snapcraft import yaml_utils
+from snapcraft.internal import common, steps
+
 from . import errors
 from ._snap import SnapInjector
-from snapcraft.internal import common, steps
-from snapcraft import yaml_utils
-
 
 logger = logging.getLogger(__name__)
 
