@@ -263,6 +263,19 @@ class Provider(abc.ABC):
         if certs_path:
             self._install_ca_certificates(pathlib.Path(certs_path))
 
+        # Configure snapd to use http/https proxy.
+        http_proxy = self.build_provider_flags.get("http_proxy")
+        if http_proxy:
+            self._run(["snap", "set", "system", f"proxy.http={http_proxy}"])
+        else:
+            self._run(["snap", "unset", "system", "proxy.http"])
+
+        https_proxy = self.build_provider_flags.get("https_proxy")
+        if https_proxy:
+            self._run(["snap", "set", "system", f"proxy.https={https_proxy}"])
+        else:
+            self._run(["snap", "unset", "system", "proxy.https"])
+
     def _install_ca_certificates(self, certs_path: pathlib.Path) -> None:
         # Should have been validated by click already.
         if not certs_path.exists():

@@ -177,11 +177,31 @@ class BaseProviderTest(BaseProviderBaseTest):
                     call(["apt-get", "update"]),
                     call(["apt-get", "dist-upgrade", "--yes"]),
                     call(["apt-get", "install", "--yes", "apt-transport-https"]),
+                    call(["snap", "unset", "system", "proxy.http"]),
+                    call(["snap", "unset", "system", "proxy.https"]),
                 ]
             ),
         )
 
         self.assertThat(provider.provider_project_dir, DirExists())
+
+    def test_launch_instance_with_proxies(self):
+        provider = ProviderImpl(
+            project=self.project,
+            echoer=self.echoer_mock,
+            build_provider_flags={
+                "http_proxy": "http://1.2.3.4:8080",
+                "https_proxy": "http://2.3.4.5:8080",
+            },
+        )
+        provider.launch_instance()
+
+        provider.run_mock.assert_has_calls(
+            [
+                call(["snap", "set", "system", "proxy.http=http://1.2.3.4:8080"]),
+                call(["snap", "set", "system", "proxy.https=http://2.3.4.5:8080"]),
+            ]
+        )
 
     def test_launch_instance_with_cert_file(self):
         test_certs = pathlib.Path(self.path, "certs")
@@ -405,7 +425,10 @@ class BaseProviderTest(BaseProviderBaseTest):
 
         provider.launch_mock.assert_not_called()
         provider.start_mock.assert_any_call()
-        provider.run_mock.assert_not_called()
+        assert provider.run_mock.mock_calls == [
+            call(["snap", "unset", "system", "proxy.http"]),
+            call(["snap", "unset", "system", "proxy.https"]),
+        ]
 
         # Given the way we constructe this test, this directory should not exist
         # TODO add robustness to start. (LP: #1792242)
